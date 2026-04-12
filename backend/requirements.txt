@@ -1,0 +1,11 @@
+# Direct dependencies only — pinned to what is installed in the venv.
+# Transitive deps (Werkzeug, Jinja2, click, urllib3, etc.) are managed
+# automatically by pip and do not need to be listed here.
+
+feedparser==6.0.11        # RSS ingestion
+psycopg2-binary==2.9.9    # PostgreSQL driver
+Flask==3.0.3              # REST API
+Flask-Cors==4.0.1         # CORS headers
+python-dotenv==1.0.1      # .env loading
+gunicorn==22.0.0          # production WSGI server
+requests==2.33.1          # Ollama HTTP calls in ranker.py
