@@ -15,7 +15,8 @@ from ranker import get_top_stories
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": os.getenv("CORS_ORIGIN", "*")}})
+cors_origins = os.getenv("CORS_ORIGIN", "*")
+CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 
 ALLOWED_SOURCES = ALLOWED_SOURCE_NAMES
 
