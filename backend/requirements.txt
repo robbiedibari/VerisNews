@@ -3,7 +3,7 @@
 # automatically by pip and do not need to be listed here.
 
 feedparser==6.0.11        # RSS ingestion
-psycopg2-binary==2.9.9    # PostgreSQL driver
+psycopg2-binary==2.9.10   # PostgreSQL driver (2.9.10 has Python 3.12 wheels)
 Flask==3.0.3              # REST API
 Flask-Cors==4.0.1         # CORS headers
 python-dotenv==1.0.1      # .env loading
