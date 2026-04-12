@@ -1,5 +1,5 @@
 [build]
-buildCommand = "npm install --prefix frontend && npm run build --prefix frontend && pip install -r backend/requirements.txt"
+buildCommand = "npm run build && pip install -r backend/requirements.txt"
 
 [deploy]
 startCommand = "gunicorn app:app --chdir backend --bind 0.0.0.0:$PORT --workers 2 --timeout 60 --log-level info"
