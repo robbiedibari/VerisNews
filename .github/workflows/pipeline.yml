@@ -2,8 +2,8 @@ name: Veris — RSS Ingestion
 
 on:
   schedule:
-    # Every 3 hours
-    - cron: "0 */3 * * *"
+    # Every 5 hours
+    - cron: "0 */5 * * *"
   # Allow manual trigger from GitHub Actions UI
   workflow_dispatch:
 
