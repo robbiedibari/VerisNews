@@ -5,7 +5,7 @@ Veris — Flask REST API
 import os
 from datetime import datetime, timezone
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 from db import get_connection, init_db
@@ -14,7 +14,14 @@ from ranker import get_top_stories
 
 load_dotenv()
 
-app = Flask(__name__)
+# React build output — present in production, absent in local dev
+REACT_BUILD = os.path.join(os.path.dirname(__file__), "..", "frontend", "build")
+
+app = Flask(
+    __name__,
+    static_folder=REACT_BUILD if os.path.isdir(REACT_BUILD) else None,
+    static_url_path="",
+)
 CORS(app, resources={r"/api/*": {"origins": os.getenv("CORS_ORIGIN", "*")}})
 
 ALLOWED_SOURCES = ALLOWED_SOURCE_NAMES
@@ -104,6 +111,22 @@ def get_top():
 @app.get("/api/health")
 def health():
     return jsonify({"status": "ok", "time": datetime.now(timezone.utc).isoformat()})
+
+
+# ---------------------------------------------------------------------------
+# React frontend — catch-all (production only)
+# ---------------------------------------------------------------------------
+
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_react(path):
+    if not os.path.isdir(REACT_BUILD):
+        return jsonify({"error": "Frontend not built"}), 404
+    # Serve the file if it exists (JS/CSS/images), otherwise return index.html
+    target = os.path.join(REACT_BUILD, path)
+    if path and os.path.exists(target):
+        return send_from_directory(REACT_BUILD, path)
+    return send_from_directory(REACT_BUILD, "index.html")
 
 
 # ---------------------------------------------------------------------------

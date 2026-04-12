@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm install --prefix frontend && npm run build --prefix frontend && pip install -r backend/requirements.txt"
+
+[deploy]
+startCommand = "cd backend && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
