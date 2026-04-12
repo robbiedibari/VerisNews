@@ -23,7 +23,7 @@ backend/.env
 
 # ── Node / React ──────────────────────────────────────────
 frontend/node_modules/
-# frontend/build is committed so Railway doesn't need Node at deploy time
+frontend/build/
 frontend/.pnp
 frontend/.pnp.js
 npm-debug.log*

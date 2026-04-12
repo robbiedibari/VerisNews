@@ -1,7 +1,0 @@
-[build]
-buildCommand = "python -m pip install -r backend/requirements.txt"
-
-[deploy]
-startCommand = "python -m gunicorn app:app --chdir backend --bind 0.0.0.0:$PORT --workers 2 --timeout 60 --log-level info"
-restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 3
