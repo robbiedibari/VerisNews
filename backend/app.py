@@ -15,8 +15,10 @@ from ranker import get_top_stories
 load_dotenv()
 
 app = Flask(__name__)
-cors_origins = os.getenv("CORS_ORIGIN", "*")
-CORS(app, resources={r"/api/*": {"origins": cors_origins}})
+
+# Public read-only API — allow all origins unconditionally.
+# No env var needed; CORS headers are always present regardless of deployment state.
+CORS(app)
 
 ALLOWED_SOURCES = ALLOWED_SOURCE_NAMES
 
