@@ -1,11 +1,12 @@
 """
 Veris — RSS ingestion pipeline.
 Sources are defined in sources.py; scoring is handled by craap.py.
-Run manually or via GitHub Actions every 3 hours.
+Run manually or via GitHub Actions every 5 hours.
 """
 
 import hashlib
 import logging
+import re
 from datetime import datetime, timezone, timedelta
 
 import feedparser
@@ -15,6 +16,7 @@ from db import get_connection, init_db
 from sources import SOURCES
 from craap import score_article
 from ranker import rank_unranked_articles
+from summariser import summarise_articles
 
 logging.basicConfig(
     level=logging.INFO,
@@ -116,6 +118,43 @@ def _resolve_url(entry, raw_url: str) -> str | None:
     return raw_url
 
 
+def _strip_html(text: str) -> str:
+    """Remove HTML tags and normalise whitespace."""
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _extract_excerpt(entry) -> str:
+    """
+    Pull the best available text excerpt from an RSS entry.
+
+    Priority:
+      1. entry.content[0].value  — some outlets (DW, RFI, NPR) publish
+                                   the full article body here
+      2. entry.summary           — the standard RSS description/excerpt
+      3. ""                      — nothing available
+
+    HTML is stripped. Result is capped at 3000 chars so Ollama stays fast.
+    """
+    # 1 — full content block (Atom / RSS2 with content:encoded)
+    content_list = getattr(entry, "content", None)
+    if content_list and isinstance(content_list, list):
+        raw = content_list[0].get("value", "") if isinstance(content_list[0], dict) \
+              else getattr(content_list[0], "value", "")
+        if raw:
+            text = _strip_html(raw)
+            if len(text) > 100:
+                return text[:3000]
+
+    # 2 — standard summary / description
+    raw = getattr(entry, "summary", "") or ""
+    if raw:
+        return _strip_html(raw)[:3000]
+
+    return ""
+
+
 def _parse_date(entry) -> datetime | None:
     for field in ("published_parsed", "updated_parsed"):
         value = getattr(entry, field, None)
@@ -195,6 +234,7 @@ def fetch_feed(source_cfg: dict, feed_url: str) -> list[dict]:
             "url":          url,
             "craap_score":  craap["total"],
             "title_hash":   _title_hash(title),
+            "rss_excerpt":  _extract_excerpt(entry),
         })
 
     log.info(
@@ -229,8 +269,11 @@ def upsert_articles(articles: list[dict]) -> int:
                     try:
                         cur.execute(
                             """
-                            INSERT INTO articles (title, source, published_at, url, craap_score)
-                            VALUES (%(title)s, %(source)s, %(published_at)s, %(url)s, %(craap_score)s)
+                            INSERT INTO articles
+                                (title, source, published_at, url, craap_score, rss_excerpt)
+                            VALUES
+                                (%(title)s, %(source)s, %(published_at)s, %(url)s,
+                                 %(craap_score)s, %(rss_excerpt)s)
                             ON CONFLICT (url) DO NOTHING
                             """,
                             art,
@@ -275,6 +318,10 @@ def run():
     # Rank any articles that don't yet have an importance score
     log.info("--- Starting importance ranking ---")
     rank_unranked_articles()
+
+    # Summarise articles so users can read without leaving the app
+    log.info("--- Starting summarisation ---")
+    summarise_articles()
 
 
 if __name__ == "__main__":

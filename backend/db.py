@@ -35,6 +35,9 @@ def init_db():
         importance_score SMALLINT,
         importance_level TEXT,
         ranked_by        TEXT,
+        rss_excerpt      TEXT,
+        summary          TEXT,
+        summarised_by    TEXT,
         created_at       TIMESTAMP DEFAULT NOW()
     );
     """
@@ -45,6 +48,9 @@ def init_db():
         "ALTER TABLE articles ADD COLUMN IF NOT EXISTS importance_score SMALLINT;",
         "ALTER TABLE articles ADD COLUMN IF NOT EXISTS importance_level TEXT;",
         "ALTER TABLE articles ADD COLUMN IF NOT EXISTS ranked_by        TEXT;",
+        "ALTER TABLE articles ADD COLUMN IF NOT EXISTS rss_excerpt      TEXT;",
+        "ALTER TABLE articles ADD COLUMN IF NOT EXISTS summary          TEXT;",
+        "ALTER TABLE articles ADD COLUMN IF NOT EXISTS summarised_by    TEXT;",
     ]
 
     # Step 3 — indexes (safe now because all columns exist)

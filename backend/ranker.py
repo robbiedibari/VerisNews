@@ -383,7 +383,7 @@ def get_top_stories(n: int = 10) -> list[dict]:
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT id, title, source, published_at, url,
-                       craap_score, importance_score, importance_level
+                       craap_score, importance_score, importance_level, summary
                 FROM   articles
                 WHERE  published_at > NOW() - INTERVAL '24 hours'
                   AND  importance_score IS NOT NULL

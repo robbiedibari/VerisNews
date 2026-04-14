@@ -51,14 +51,11 @@ export default function ArticleCard({ article, isRead, onRead, now }) {
   const badgeClass = SOURCE_BADGE[article.source] ?? "bg-slate-100 text-slate-600";
   const craap      = craapMeta(article.craap_score);
   const age        = timeAgo(article.published_at, now);
+  const hasSummary = Boolean(article.summary);
 
   return (
-    <a
-      href={article.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={onRead}
-      className={`group block border rounded-xl transition-all duration-150 active:scale-[0.99] overflow-hidden
+    <div
+      className={`group border rounded-xl transition-all duration-150 overflow-hidden
         ${isRead
           ? "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
           : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md"
@@ -68,12 +65,12 @@ export default function ArticleCard({ article, isRead, onRead, now }) {
       <div className="flex">
         {/* Left accent stripe — only visible when read */}
         {isRead && (
-          <div className="w-1 flex-shrink-0 bg-emerald-400 dark:bg-emerald-500 rounded-l-xl" />
+          <div className="w-1 flex-shrink-0 bg-emerald-400 dark:bg-emerald-500" />
         )}
 
         <div className="flex-1 p-4 min-w-0">
           {/* Meta row */}
-          <div className="flex items-center gap-2 mb-2 flex-wrap">
+          <div className="flex items-center gap-2 mb-2.5 flex-wrap">
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badgeClass}`}>
               {article.source}
             </span>
@@ -81,12 +78,10 @@ export default function ArticleCard({ article, isRead, onRead, now }) {
               {age}
             </span>
 
-            {/* Importance badge */}
             {article.importance_level && (
               <ImportanceBadge level={article.importance_level} size="sm" />
             )}
 
-            {/* CRAAP score badge */}
             {craap && (
               <span
                 className={`text-xs font-medium ${craap.color}`}
@@ -96,7 +91,6 @@ export default function ArticleCard({ article, isRead, onRead, now }) {
               </span>
             )}
 
-            {/* Read indicator */}
             {isRead && (
               <span className="ml-auto flex items-center gap-1 text-xs font-medium text-emerald-500 dark:text-emerald-400">
                 <CheckIcon />
@@ -105,18 +99,38 @@ export default function ArticleCard({ article, isRead, onRead, now }) {
             )}
           </div>
 
-          {/* Title — full colour always, no dimming */}
-          <p className="text-sm font-medium leading-snug line-clamp-3 text-slate-800 dark:text-slate-100 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+          {/* Headline */}
+          <p className="text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100 transition-colors">
             {article.title}
           </p>
 
-          {/* Footer */}
-          <div className="flex items-center gap-1 mt-2 text-xs text-slate-400 dark:text-slate-500">
+          {/* Summary — the main reading experience */}
+          {hasSummary && (
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              {article.summary}
+            </p>
+          )}
+
+          {/* Footer — always present, only navigates */}
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onRead}
+            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium
+              text-slate-400 dark:text-slate-500
+              hover:text-blue-600 dark:hover:text-blue-400
+              transition-colors active:scale-[0.98]"
+          >
             <ExternalLinkIcon />
-            <span className="truncate">{new URL(article.url).hostname.replace("www.", "")}</span>
-          </div>
+            <span>
+              {new URL(article.url).hostname.replace("www.", "")}
+            </span>
+            <span className="text-slate-300 dark:text-slate-600">·</span>
+            <span>Read full article</span>
+          </a>
         </div>
       </div>
-    </a>
+    </div>
   );
 }

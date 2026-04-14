@@ -55,7 +55,7 @@ def get_articles():
     count_sql = f"SELECT COUNT(*) AS total FROM articles WHERE {base_where}"
     data_sql  = f"""
         SELECT id, title, source, published_at, url,
-               craap_score, importance_score, importance_level
+               craap_score, importance_score, importance_level, summary
         FROM   articles
         WHERE  {base_where}
         ORDER  BY published_at DESC
@@ -126,6 +126,7 @@ def _serialize(row: dict) -> dict:
         "craap_score":      row.get("craap_score"),
         "importance_score": row.get("importance_score"),
         "importance_level": row.get("importance_level"),
+        "summary":          row.get("summary"),
     }
 
 
