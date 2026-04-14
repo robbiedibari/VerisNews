@@ -22,6 +22,15 @@ CORS(app)
 
 ALLOWED_SOURCES = ALLOWED_SOURCE_NAMES
 
+# Run DB migrations on startup so new columns are always present
+# before the first request hits. All migrations use IF NOT EXISTS — safe
+# to run on every Gunicorn worker start.
+try:
+    init_db()
+except Exception as _e:
+    import logging
+    logging.getLogger(__name__).warning("init_db() failed at startup: %s", _e)
+
 
 # ---------------------------------------------------------------------------
 # Routes
