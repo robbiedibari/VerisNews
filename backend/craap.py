@@ -210,7 +210,19 @@ _PURPOSE_OPINION_RE = re.compile(
 )
 _PURPOSE_SOFT_RE = re.compile(
     r"\b(recipe|travel|lifestyle|fashion|celebrity|horoscope|"
-    r"quiz|fun fact|did you know|throwback)\b",
+    r"quiz|fun fact|did you know|throwback|"
+    r"taylor swift|beyonc[eé]|kim kardashian|grammy|oscar award|"
+    r"box office|album (release|chart)|concert tour|red carpet)\b",
+    re.IGNORECASE,
+)
+
+# Geopolitics signal — these topics are the editorial core of Veris
+_GEOPOLITICS_RE = re.compile(
+    r"\b(war|invasion|coup|sanctions|nato|un security|ceasefire|"
+    r"nuclear|missile|troops|airstrike|diplomatic|treaty|summit|"
+    r"bilateral|sovereignty|territorial|embargo|blockade|referendum|"
+    r"foreign minister|secretary of state|prime minister|"
+    r"kremlin|pentagon|whitehouse|g7|g20)\b",
     re.IGNORECASE,
 )
 
@@ -223,7 +235,8 @@ def score_purpose(source_name: str, title: str) -> int:
     source = SOURCE_BY_NAME.get(source_name)
     base   = source["purpose_score"] if source else 2
 
-    if _PURPOSE_NEWS_RE.search(title):    base = min(5, base + 1)
+    if _PURPOSE_NEWS_RE.search(title):   base = min(5, base + 1)
+    if _GEOPOLITICS_RE.search(title):    base = min(5, base + 1)  # geopolitics boost
 
     return max(1, min(5, base))
 
