@@ -113,6 +113,30 @@ def get_top():
     })
 
 
+@app.get("/api/sources")
+def get_sources():
+    """
+    GET /api/sources
+    Returns the list of source names that have at least one article
+    published in the last 24 hours. Used by the frontend to hide
+    empty source tabs.
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT DISTINCT source
+                FROM   articles
+                WHERE  published_at >= NOW() - INTERVAL '24 hours'
+                ORDER  BY source
+            """)
+            rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    return jsonify({"sources": [row["source"] for row in rows]})
+
+
 @app.get("/api/health")
 def health():
     return jsonify({"status": "ok", "time": datetime.now(timezone.utc).isoformat()})

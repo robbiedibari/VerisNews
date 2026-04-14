@@ -10,6 +10,7 @@ import { useArticles } from "./hooks/useArticles";
 import { useReadArticles } from "./hooks/useReadArticles";
 import { useNow } from "./hooks/useNow";
 import { useTopStories } from "./hooks/useTopStories";
+import { useActiveSources } from "./hooks/useActiveSources";
 
 const THEME_CYCLE = { light: "sepia", sepia: "dark", dark: "light" };
 
@@ -45,6 +46,19 @@ export default function App() {
   const { stories, loading: topLoading } = useTopStories(10);
   const { markRead, isRead } = useReadArticles();
   const now = useNow(1000);
+  const { isVisible, activeSources } = useActiveSources();
+
+  // If the currently selected source tab has no articles today, reset to Top Stories
+  useEffect(() => {
+    if (
+      activeSources !== null &&
+      activeSource !== "Top Stories" &&
+      activeSource !== "All" &&
+      !activeSources.has(activeSource)
+    ) {
+      setActiveSource("Top Stories");
+    }
+  }, [activeSources, activeSource]);
 
   return (
     <div className="min-h-screen bg-page transition-colors duration-250">
@@ -54,7 +68,7 @@ export default function App() {
         now={now}
       />
 
-      <FilterTabs active={activeSource} onChange={setActiveSource} />
+      <FilterTabs active={activeSource} onChange={setActiveSource} isVisible={isVisible} />
 
       <main className="max-w-2xl mx-auto px-4 py-4">
         {/* Top Stories tab */}

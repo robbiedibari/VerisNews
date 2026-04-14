@@ -18,11 +18,11 @@ const SOURCE_COLORS = {
   PBS: "data-[active=true]:bg-emerald-700 data-[active=true]:text-white",
 };
 
-export default function FilterTabs({ active, onChange }) {
+export default function FilterTabs({ active, onChange, isVisible }) {
   return (
     <div className="relative z-20 max-w-2xl mx-auto px-4 pt-3 pb-1">
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-        {SOURCES.map((src) => (
+        {SOURCES.filter((src) => !isVisible || isVisible(src)).map((src) => (
           <button
             key={src}
             data-active={active === src}
