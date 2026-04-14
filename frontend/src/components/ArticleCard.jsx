@@ -58,59 +58,64 @@ export default function ArticleCard({ article, isRead, onRead, now }) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={onRead}
-      className={`group block border rounded-xl p-4 transition-all duration-150 active:scale-[0.99]
+      className={`group block border rounded-xl transition-all duration-150 active:scale-[0.99] overflow-hidden
         ${isRead
-          ? "bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800/50"
+          ? "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
           : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md"
         }`}
     >
-      {/* Meta row */}
-      <div className="flex items-center gap-2 mb-2 flex-wrap">
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full transition-opacity ${badgeClass} ${isRead ? "opacity-50" : ""}`}>
-          {article.source}
-        </span>
-        <span className="text-xs text-slate-400 dark:text-slate-500">
-          {age}
-        </span>
-
-        {/* Importance badge */}
-        {article.importance_level && (
-          <ImportanceBadge level={article.importance_level} size="sm" />
-        )}
-
-        {/* CRAAP score badge */}
-        {craap && (
-          <span
-            className={`text-xs font-medium ${craap.color} ${isRead ? "opacity-40" : ""}`}
-            title={`CRAAP score: ${article.craap_score}/25 — Currency · Relevance · Authority · Accuracy · Purpose`}
-          >
-            ● {article.craap_score}/25
-          </span>
-        )}
-
-        {/* Read indicator */}
+      {/* Read stripe + content wrapper */}
+      <div className="flex">
+        {/* Left accent stripe — only visible when read */}
         {isRead && (
-          <span className="ml-auto flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
-            <CheckIcon />
-            Read
-          </span>
+          <div className="w-1 flex-shrink-0 bg-emerald-400 dark:bg-emerald-500 rounded-l-xl" />
         )}
-      </div>
 
-      {/* Title */}
-      <p className={`text-sm leading-snug line-clamp-3 transition-colors
-        ${isRead
-          ? "font-normal text-slate-400 dark:text-slate-500"
-          : "font-medium text-slate-800 dark:text-slate-100 group-hover:text-slate-900 dark:group-hover:text-white"
-        }`}
-      >
-        {article.title}
-      </p>
+        <div className="flex-1 p-4 min-w-0">
+          {/* Meta row */}
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badgeClass}`}>
+              {article.source}
+            </span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">
+              {age}
+            </span>
 
-      {/* Footer */}
-      <div className="flex items-center gap-1 mt-2 text-xs text-slate-400 dark:text-slate-500">
-        <ExternalLinkIcon />
-        <span className="truncate">{new URL(article.url).hostname.replace("www.", "")}</span>
+            {/* Importance badge */}
+            {article.importance_level && (
+              <ImportanceBadge level={article.importance_level} size="sm" />
+            )}
+
+            {/* CRAAP score badge */}
+            {craap && (
+              <span
+                className={`text-xs font-medium ${craap.color}`}
+                title={`CRAAP score: ${article.craap_score}/25 — Currency · Relevance · Authority · Accuracy · Purpose`}
+              >
+                ● {article.craap_score}/25
+              </span>
+            )}
+
+            {/* Read indicator */}
+            {isRead && (
+              <span className="ml-auto flex items-center gap-1 text-xs font-medium text-emerald-500 dark:text-emerald-400">
+                <CheckIcon />
+                Read
+              </span>
+            )}
+          </div>
+
+          {/* Title — full colour always, no dimming */}
+          <p className="text-sm font-medium leading-snug line-clamp-3 text-slate-800 dark:text-slate-100 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+            {article.title}
+          </p>
+
+          {/* Footer */}
+          <div className="flex items-center gap-1 mt-2 text-xs text-slate-400 dark:text-slate-500">
+            <ExternalLinkIcon />
+            <span className="truncate">{new URL(article.url).hostname.replace("www.", "")}</span>
+          </div>
+        </div>
       </div>
     </a>
   );
