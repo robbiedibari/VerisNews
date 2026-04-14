@@ -1,7 +1,7 @@
 import React from "react";
 import ImportanceBadge from "./ImportanceBadge";
 
-// Source badge colours
+// Source badge colours — fixed, informational, not theme-affected
 const SOURCE_BADGE = {
   AP:  "bg-blue-100   text-blue-800   dark:bg-blue-900/40   dark:text-blue-300",
   AFP: "bg-green-100  text-green-700  dark:bg-green-900/40  dark:text-green-300",
@@ -15,16 +15,15 @@ const SOURCE_BADGE = {
   PBS: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
 };
 
-// CRAAP score → colour + label
 function craapMeta(score) {
   if (score == null) return null;
-  if (score >= 22) return { color: "text-emerald-500 dark:text-emerald-400", label: "Strong" };
-  if (score >= 18) return { color: "text-green-500  dark:text-green-400",   label: "Good" };
-  return              { color: "text-amber-500  dark:text-amber-400",   label: "Fair" };
+  if (score >= 22) return { color: "text-emerald-600 dark:text-emerald-400", label: "Strong" };
+  if (score >= 18) return { color: "text-green-600  dark:text-green-400",   label: "Good"   };
+  return              { color: "text-amber-600  dark:text-amber-400",   label: "Fair"   };
 }
 
 const ExternalLinkIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 flex-shrink-0 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
   </svg>
 );
@@ -43,30 +42,24 @@ function timeAgo(publishedAt, now) {
   if (mins < 60)  return `${mins}m ago`;
   const hrs   = Math.floor(mins  / 60);
   if (hrs  < 24)  return `${hrs}h ago`;
-  const days  = Math.floor(hrs   / 24);
-  return `${days}d ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 export default function ArticleCard({ article, isRead, onRead, now }) {
-  const badgeClass = SOURCE_BADGE[article.source] ?? "bg-slate-100 text-slate-600";
+  const badgeClass = SOURCE_BADGE[article.source] ?? "bg-stone-100 text-stone-600";
   const craap      = craapMeta(article.craap_score);
   const age        = timeAgo(article.published_at, now);
   const hasSummary = Boolean(article.summary);
 
   return (
-    <div
-      className={`group border rounded-xl transition-all duration-150 overflow-hidden
-        ${isRead
-          ? "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-          : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md"
-        }`}
+    <div className={`border border-theme rounded-xl overflow-hidden transition-all duration-150
+      bg-card hover:shadow-card
+      ${!isRead ? "hover:border-theme" : ""}`}
+      style={!isRead ? { "--tw-border-opacity": 1 } : {}}
     >
-      {/* Read stripe + content wrapper */}
       <div className="flex">
-        {/* Left accent stripe — only visible when read */}
-        {isRead && (
-          <div className="w-1 flex-shrink-0 bg-emerald-400 dark:bg-emerald-500" />
-        )}
+        {/* Read stripe */}
+        {isRead && <div className="w-1 flex-shrink-0 bg-stripe" />}
 
         <div className="flex-1 p-4 min-w-0">
           {/* Meta row */}
@@ -74,9 +67,7 @@ export default function ArticleCard({ article, isRead, onRead, now }) {
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badgeClass}`}>
               {article.source}
             </span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">
-              {age}
-            </span>
+            <span className="text-xs text-muted">{age}</span>
 
             {article.importance_level && (
               <ImportanceBadge level={article.importance_level} size="sm" />
@@ -92,41 +83,37 @@ export default function ArticleCard({ article, isRead, onRead, now }) {
             )}
 
             {isRead && (
-              <span className="ml-auto flex items-center gap-1 text-xs font-medium text-emerald-500 dark:text-emerald-400">
-                <CheckIcon />
-                Read
+              <span className="ml-auto flex items-center gap-1 text-xs font-medium text-stripe">
+                <CheckIcon /> Read
               </span>
             )}
           </div>
 
           {/* Headline */}
-          <p className="text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100 transition-colors">
+          <p className="text-sm font-semibold leading-snug text-primary">
             {article.title}
           </p>
 
           {/* Summary — the main reading experience */}
           {hasSummary && (
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            <p className="mt-2.5 text-sm leading-relaxed text-secondary">
               {article.summary}
             </p>
           )}
 
-          {/* Footer — always present, only navigates */}
+          {/* Footer link */}
           <a
             href={article.url}
             target="_blank"
             rel="noopener noreferrer"
             onClick={onRead}
             className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium
-              text-slate-400 dark:text-slate-500
-              hover:text-blue-600 dark:hover:text-blue-400
+              text-muted hover:text-blue-600 dark:hover:text-blue-400
               transition-colors active:scale-[0.98]"
           >
             <ExternalLinkIcon />
-            <span>
-              {new URL(article.url).hostname.replace("www.", "")}
-            </span>
-            <span className="text-slate-300 dark:text-slate-600">·</span>
+            <span>{new URL(article.url).hostname.replace("www.", "")}</span>
+            <span className="opacity-40">·</span>
             <span>Read full article</span>
           </a>
         </div>

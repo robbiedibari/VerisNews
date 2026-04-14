@@ -27,54 +27,45 @@ const CheckIcon = () => (
 );
 
 function TopStoryCard({ article, rank, now, isRead, onRead }) {
-  const badgeClass = SOURCE_BADGE[article.source] ?? "bg-slate-100 text-slate-600";
+  const badgeClass = SOURCE_BADGE[article.source] ?? "bg-stone-100 text-stone-600";
   const diff = Math.max(0, now - new Date(article.published_at).getTime());
   const mins = Math.floor(diff / 60000);
   const age  = mins < 60 ? `${mins}m ago` : `${Math.floor(mins / 60)}h ago`;
   const hasSummary = Boolean(article.summary);
 
   return (
-    <div
-      className={`border rounded-xl overflow-hidden transition-all duration-150
-        ${isRead
-          ? "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-          : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm"
-        }`}
-    >
+    <div className="border border-theme rounded-xl overflow-hidden transition-all duration-150 bg-card hover:shadow-card">
       <div className="flex">
-        {/* Left accent stripe — only when read */}
-        {isRead && (
-          <div className="w-1 flex-shrink-0 bg-emerald-400 dark:bg-emerald-500" />
-        )}
+        {/* Read stripe */}
+        {isRead && <div className="w-1 flex-shrink-0 bg-stripe" />}
 
         <div className="flex-1 p-4 min-w-0">
           {/* Rank + meta */}
           <div className="flex items-center gap-2 flex-wrap mb-2">
-            <span className="flex-shrink-0 w-5 text-center text-sm font-bold text-slate-300 dark:text-slate-600">
+            <span className="flex-shrink-0 w-5 text-center text-sm font-bold text-muted">
               {rank}
             </span>
             <ImportanceBadge level={article.importance_level} size="sm" />
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badgeClass}`}>
               {article.source}
             </span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">{age}</span>
+            <span className="text-xs text-muted">{age}</span>
 
             {isRead && (
-              <span className="ml-auto flex items-center gap-1 text-xs font-medium text-emerald-500 dark:text-emerald-400">
-                <CheckIcon />
-                Read
+              <span className="ml-auto flex items-center gap-1 text-xs font-medium text-stripe">
+                <CheckIcon /> Read
               </span>
             )}
           </div>
 
           {/* Headline */}
-          <p className="text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100">
+          <p className="text-sm font-semibold leading-snug text-primary">
             {article.title}
           </p>
 
           {/* Summary */}
           {hasSummary && (
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            <p className="mt-2.5 text-sm leading-relaxed text-secondary">
               {article.summary}
             </p>
           )}
@@ -86,13 +77,12 @@ function TopStoryCard({ article, rank, now, isRead, onRead }) {
             rel="noopener noreferrer"
             onClick={onRead}
             className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium
-              text-slate-400 dark:text-slate-500
-              hover:text-blue-600 dark:hover:text-blue-400
+              text-muted hover:text-blue-600 dark:hover:text-blue-400
               transition-colors active:scale-[0.98]"
           >
             <ExternalLinkIcon />
             <span>{new URL(article.url).hostname.replace("www.", "")}</span>
-            <span className="text-slate-300 dark:text-slate-600">·</span>
+            <span className="opacity-40">·</span>
             <span>Read full article</span>
           </a>
         </div>
@@ -104,16 +94,16 @@ function TopStoryCard({ article, rank, now, isRead, onRead }) {
 export default function TopStoriesSection({ stories, loading, now, isRead, onRead }) {
   return (
     <div className="flex flex-col gap-3">
-      {loading && (
+      {loading &&
         Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+          <div key={i} className="h-24 rounded-xl bg-skel-base animate-pulse" />
         ))
-      )}
+      }
 
       {!loading && stories.length === 0 && (
-        <div className="text-center py-16 text-slate-400 dark:text-slate-500">
+        <div className="text-center py-16 text-muted">
           <p className="text-4xl mb-3">🏆</p>
-          <p className="font-medium">No ranked stories yet</p>
+          <p className="font-medium text-secondary">No ranked stories yet</p>
           <p className="text-sm mt-1">New stories are fetched automatically — check back soon.</p>
         </div>
       )}

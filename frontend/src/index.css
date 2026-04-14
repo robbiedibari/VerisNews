@@ -2,6 +2,130 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   VERIS — Reading-optimised design tokens
+   Three themes: light (warm off-white) · sepia (amber cream) · dark (warm brown)
+
+   All UI components use these CSS variables via the utility classes below,
+   so every theme change is a single attribute swap on <html>.
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Light — warm off-white, easier on the eyes than pure white ─────────── */
+:root,
+html[data-theme="light"] {
+  --c-bg-page:       #FAF9F6;
+  --c-bg-card:       #FFFFFF;
+  --c-bg-card-hover: #F7F5F1;
+  --c-border:        #E8E4DD;
+  --c-border-hover:  #D4CECC;
+
+  --c-text-primary:   #1C1917;   /* warm near-black — easier than #000 */
+  --c-text-secondary: #57534E;   /* warm medium — body / summary copy  */
+  --c-text-muted:     #A8A29E;   /* timestamps, domains, meta          */
+
+  --c-stripe:         #34D399;   /* read-article left border           */
+  --c-stripe-text:    #059669;
+
+  --c-header-bg:      rgba(250, 249, 246, 0.92);
+  --c-header-border:  #E8E4DD;
+
+  --c-tab-pill-bg:    #EDE9E4;
+  --c-tab-pill-hover: #E0DDD7;
+
+  --c-skel-base:      #EDE9E4;
+  --c-skel-shine:     #F5F2EE;
+
+  --c-shadow:         0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* ── Sepia — amber cream, classic e-reader, zero fatigue ────────────────── */
+html[data-theme="sepia"] {
+  --c-bg-page:       #F4ECD8;
+  --c-bg-card:       #FBF4E4;
+  --c-bg-card-hover: #F7EED9;
+  --c-border:        #DDD0B3;
+  --c-border-hover:  #C9BB98;
+
+  --c-text-primary:   #2C1810;
+  --c-text-secondary: #5C4033;
+  --c-text-muted:     #9C7B6B;
+
+  --c-stripe:         #7A9E6A;
+  --c-stripe-text:    #5A7E4A;
+
+  --c-header-bg:      rgba(239, 229, 210, 0.94);
+  --c-header-border:  #DDD0B3;
+
+  --c-tab-pill-bg:    #EBE0C4;
+  --c-tab-pill-hover: #E2D4B0;
+
+  --c-skel-base:      #E5D9BE;
+  --c-skel-shine:     #EDE4CC;
+
+  --c-shadow:         0 1px 3px rgba(80,50,20,0.10), 0 1px 2px rgba(80,50,20,0.06);
+}
+
+/* ── Dark — warm dark brown, no harsh blue-black ───────────────────────── */
+html[data-theme="dark"] {
+  --c-bg-page:       #1A1714;
+  --c-bg-card:       #242019;
+  --c-bg-card-hover: #2C2822;
+  --c-border:        #3D3730;
+  --c-border-hover:  #524B42;
+
+  --c-text-primary:   #E8E3D8;
+  --c-text-secondary: #B5AFA8;
+  --c-text-muted:     #78716C;
+
+  --c-stripe:         #34D399;
+  --c-stripe-text:    #34D399;
+
+  --c-header-bg:      rgba(26, 23, 20, 0.92);
+  --c-header-border:  #3D3730;
+
+  --c-tab-pill-bg:    #2C2822;
+  --c-tab-pill-hover: #363028;
+
+  --c-skel-base:      #2A2620;
+  --c-skel-shine:     #332E28;
+
+  --c-shadow:         0 1px 3px rgba(0,0,0,0.30), 0 1px 2px rgba(0,0,0,0.20);
+}
+
+/* ═══ Theme utility classes ═════════════════════════════════════════════ */
+@layer utilities {
+  /* Backgrounds */
+  .bg-page        { background-color: var(--c-bg-page); }
+  .bg-card        { background-color: var(--c-bg-card); }
+  .bg-card-hover  { background-color: var(--c-bg-card-hover); }
+  .bg-header      { background-color: var(--c-header-bg); }
+  .bg-tab-pill    { background-color: var(--c-tab-pill-bg); }
+  .bg-stripe      { background-color: var(--c-stripe); }
+  .bg-skel-base   { background-color: var(--c-skel-base); }
+  .bg-skel-shine  { background-color: var(--c-skel-shine); }
+
+  /* Borders */
+  .border-theme   { border-color: var(--c-border); }
+  .border-header  { border-color: var(--c-header-border); }
+
+  /* Text */
+  .text-primary   { color: var(--c-text-primary); }
+  .text-secondary { color: var(--c-text-secondary); }
+  .text-muted     { color: var(--c-text-muted); }
+  .text-stripe    { color: var(--c-stripe-text); }
+
+  /* Shadow */
+  .shadow-card    { box-shadow: var(--c-shadow); }
+
+  /* Scrollbar hide */
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* ═══ Base ══════════════════════════════════════════════════════════════ */
 @layer base {
   html {
     font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -9,20 +133,10 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200;
+    background-color: var(--c-bg-page);
+    color: var(--c-text-primary);
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
-  * {
-    @apply box-border;
-  }
-}
-
-@layer utilities {
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+  * { box-sizing: border-box; }
 }
