@@ -103,10 +103,9 @@ export default function App() {
             </div>
 
             {!loading && !error && articles.length === 0 && (
-              <div className="text-center py-16 text-muted">
-                <p className="text-4xl mb-3">📡</p>
-                <p className="font-medium text-secondary">No articles in the last 24 hours</p>
-                <p className="text-sm mt-1">New stories are fetched automatically — check back soon.</p>
+              <div className="text-center py-16">
+                <p className="text-sm font-semibold text-secondary">No articles in the last 24 hours</p>
+                <p className="text-xs text-muted mt-1">New stories are fetched automatically — check back soon.</p>
               </div>
             )}
 

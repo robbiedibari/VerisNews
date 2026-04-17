@@ -28,14 +28,14 @@ export default function FilterTabs({ active, onChange, isVisible }) {
             data-active={active === src}
             onClick={() => onChange(src)}
             className={`
-              flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium
+              flex-shrink-0 px-3.5 py-1 rounded text-[11px] font-bold uppercase tracking-wide
               transition-all duration-150
-              bg-tab-pill text-secondary
-              hover:bg-card
+              bg-tab-pill text-muted
+              hover:text-primary hover:bg-card
               ${SOURCE_COLORS[src] ?? ""}
             `}
           >
-            {src === "Top Stories" ? "🏆 Top Stories" : src}
+            {src}
           </button>
         ))}
       </div>
