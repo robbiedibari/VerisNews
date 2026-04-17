@@ -6,6 +6,7 @@ import SkeletonCard from "./components/SkeletonCard";
 import ErrorBanner from "./components/ErrorBanner";
 import InfiniteScrollSentinel from "./components/InfiniteScrollSentinel";
 import TopStoriesSection from "./components/TopStoriesSection";
+import AboutPage from "./components/AboutPage";
 import { useArticles } from "./hooks/useArticles";
 import { useReadArticles } from "./hooks/useReadArticles";
 import { useNow } from "./hooks/useNow";
@@ -36,6 +37,7 @@ function useTheme() {
 
 export default function App() {
   const [theme, cycleTheme] = useTheme();
+  const [view, setView] = useState("feed");          // "feed" | "about"
   const [activeSource, setActiveSource] = useState("Top Stories");
 
   const isTopStories = activeSource === "Top Stories";
@@ -66,11 +68,16 @@ export default function App() {
         theme={theme}
         onCycleTheme={cycleTheme}
         now={now}
+        view={view}
+        onSetView={setView}
       />
 
-      <FilterTabs active={activeSource} onChange={setActiveSource} isVisible={isVisible} />
+      {/* About page takes over the full content area */}
+      {view === "about" && <AboutPage />}
 
-      <main className="max-w-2xl mx-auto px-4 py-4">
+      {view === "feed" && <FilterTabs active={activeSource} onChange={setActiveSource} isVisible={isVisible} />}
+
+      {view === "feed" && <main className="max-w-2xl mx-auto px-4 py-4">
         {/* Top Stories tab */}
         {isTopStories && (
           <TopStoriesSection
@@ -124,7 +131,7 @@ export default function App() {
             )}
           </>
         )}
-      </main>
+      </main>}
     </div>
   );
 }

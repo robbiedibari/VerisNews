@@ -32,8 +32,9 @@ function formatDate(date) {
   return date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 }
 
-export default function Header({ theme, onCycleTheme, now }) {
+export default function Header({ theme, onCycleTheme, now, view, onSetView }) {
   const meta = THEME_META[theme] ?? THEME_META.light;
+  const onAbout = () => onSetView(view === "about" ? "feed" : "about");
 
   return (
     <header className="sticky top-0 z-30 bg-header backdrop-blur border-b border-header shadow-sm h-14 overflow-hidden transition-colors duration-250">
@@ -58,8 +59,18 @@ export default function Header({ theme, onCycleTheme, now }) {
           </p>
         </div>
 
-        {/* Theme cycle button */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Right controls */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* About / Back toggle */}
+          <button
+            onClick={onAbout}
+            className="px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest
+              text-muted hover:text-primary hover:bg-tab-pill transition-colors"
+          >
+            {view === "about" ? "← Feed" : "About"}
+          </button>
+
+          {/* Theme cycle button */}
           <button
             onClick={onCycleTheme}
             aria-label={`Switch to ${meta.next} mode`}
