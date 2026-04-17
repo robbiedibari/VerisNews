@@ -1,21 +1,23 @@
 """
-Veris — CRAAP scorer  (v2)
+Veris — CRAAPO scorer  (v3)
 
-CRAAP = Currency · Relevance · Authority · Accuracy · Purpose
-Each dimension scores 1–5. Total range: 5–25.
+CRAAPO = Currency · Relevance · Authority · Accuracy · Purpose · Objectivity
+Each dimension scores 1–5. Total range: 6–30.
 Articles below MIN_SCORE are dropped at ingestion.
 
-v2 changes vs v1
+v3 changes vs v2
 ─────────────────
-• Currency:   sharper time-decay — 8h+ articles lose meaningful points
-• Relevance:  penalises opinion / analysis / listicle framing;
-              rewards named-entity + active-event titles
-• Authority:  source tier is the BASE only; editorial markers
-              (Opinion:, Analysis:, "Why X is…") cut the score
-• Accuracy:   adds Betteridge's Law (question headlines),
-              superlatives, weasel words; rewards verifiable specifics
-• Purpose:    inferred from title patterns — not from source alone.
-              Straight-news verbs → 5; opinion markers → 1–2.
+• Objectivity (O): NEW 6th dimension — institutional backing, sponsored content
+  detection, and quality-control signals inspired by the SIFT framework.
+• Relevance:    celebrity content is now a R=1 hard-fail (not just P=2 soft hit).
+                _NAMED_ENTITY_RE fixed — months/weekdays removed (they fire on
+                everything and add no signal), replaced with concrete geopolitical
+                and governmental entities.
+• Accuracy:     optionally accepts rss_excerpt; sensational/weasel language in
+                the body is a stronger signal than the title alone (SIFT: Trace claims).
+• Cross-dimension quality bonus: R≥4 AND Accuracy≥4 → +1 to total (SIFT: Find
+  other coverage confirms quality from multiple angles).
+• MIN_SCORE:    17 → 20  (same ~67% pass threshold against the new 30-point max).
 
 All rules are deterministic and auditable (no AI, no LLM).
 """
@@ -25,7 +27,7 @@ from datetime import datetime, timezone
 
 from sources import SOURCE_BY_NAME
 
-MIN_SCORE = 17   # articles scoring below this are dropped at ingestion
+MIN_SCORE = 20   # articles scoring below this are dropped at ingestion (out of 30)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -48,7 +50,7 @@ def score_currency(published_at: datetime) -> int:
 
 # ─────────────────────────────────────────────────────────────────────────────
 # R — Relevance  (1–5)
-# Is this an actual news event — not an opinion, listicle, or promo?
+# Is this an actual news event — not an opinion, listicle, promo, or celebrity?
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Strong signals that the piece is NOT straight news
@@ -73,13 +75,32 @@ _NAV_PAGE_RE  = re.compile(
     r"(home|breaking|latest|top|live))",
     re.IGNORECASE,
 )
+# SIFT: celebrity / entertainment = not geopolitical news — hard R=1 fail
+# Mirrors _PURPOSE_SOFT_RE but here it gates relevance, not just purpose
+_CELEB_RELEVANCE_RE = re.compile(
+    r"\b(taylor swift|beyonc[eé]|kim kardashian|kanye( west)?|drake|rihanna|"
+    r"selena gomez|ariana grande|harry styles|billie eilish|britney spears|"
+    r"lady gaga|justin bieber|miley cyrus|dua lipa|the weeknd|post malone|"
+    r"grammy (award|winner|nominee)|golden globe|emmy award|"
+    r"box office (record|gross)|concert tour|album (chart|release|drop)|"
+    r"red carpet|celebrity couple|celebrity split)\b",
+    re.IGNORECASE,
+)
 
 # Positive signals — specific, verifiable events
+# v3: months and weekdays removed — "January report" / "Monday meeting" fire on
+# nearly every headline and carry no meaningful relevance signal.
 _NAMED_ENTITY_RE = re.compile(
-    r"\b(january|february|march|april|may|june|july|august|september|"
-    r"october|november|december|monday|tuesday|wednesday|thursday|friday|"
-    r"saturday|sunday|\d{4}|united\s+\w+|president|minister|parliament|"
-    r"court|police|army|nato|un\b|eu\b|who\b|imf\b)\b",
+    r"\b(\d{4}|"                                    # 4-digit years (not ordinal lists)
+    r"united\s+(states|nations|kingdom|arab|front)|"
+    r"president|prime\s+minister|foreign\s+minister|secretary\s+of\s+state|"
+    r"parliament|congress|senate|cabinet|"
+    r"supreme\s+court|high\s+court|tribunal|"
+    r"police|military|army|navy|air\s+force|coast\s+guard|"
+    r"nato|un\b|eu\b|who\b|imf\b|wto\b|iaea\b|icj\b|"
+    r"government|authorities|officials?|ministry|agency|commission|"
+    r"summit|treaty|accord|ceasefire|election|referendum|"
+    r"forces|troops|soldiers|hostages?)\b",
     re.IGNORECASE,
 )
 _ACTIVE_VERB_RE = re.compile(
@@ -93,23 +114,24 @@ _ACTIVE_VERB_RE = re.compile(
 def score_relevance(title: str, url: str) -> int:
     score = 3   # neutral starting point (not 5)
 
-    # Hard penalisations
-    if _OPINION_RE.search(title):      return 1   # opinion/analysis → hard floor
-    if _LISTICLE_RE.search(title):     return 1   # listicle → hard floor
-    if _PROMO_RE.search(title):        return 1   # promotional → not news
-    if _NAV_PAGE_RE.search(title):     return 1   # homepage / audio / video page
+    # Hard fails
+    if _OPINION_RE.search(title):           return 1   # opinion/analysis
+    if _LISTICLE_RE.search(title):          return 1   # listicle
+    if _PROMO_RE.search(title):             return 1   # promotional
+    if _NAV_PAGE_RE.search(title):          return 1   # homepage / audio / video page
+    if _CELEB_RELEVANCE_RE.search(title):   return 1   # celebrity/entertainment content
 
     # Soft penalisations
-    if _QUESTION_RE.search(title):     score -= 1  # Betteridge's Law
-    if len(title.strip()) < 20:        score -= 1  # too short to be substantive
-    if len(title.strip()) > 220:       score -= 1  # likely concatenated/garbled
+    if _QUESTION_RE.search(title):          score -= 1  # Betteridge's Law
+    if len(title.strip()) < 20:             score -= 1  # too short to be substantive
+    if len(title.strip()) > 220:            score -= 1  # likely concatenated/garbled
 
     non_article = ("/author/", "/tag/", "/topic/", "/category/", "/section/")
     if any(p in url.lower() for p in non_article): score -= 1
 
     # Positive signals
-    if _NAMED_ENTITY_RE.search(title): score += 1  # specific entity
-    if _ACTIVE_VERB_RE.search(title):  score += 1  # concrete event verb
+    if _NAMED_ENTITY_RE.search(title):      score += 1  # specific entity
+    if _ACTIVE_VERB_RE.search(title):       score += 1  # concrete event verb
 
     return max(1, min(5, score))
 
@@ -141,7 +163,9 @@ def score_authority(source_name: str, title: str, url: str) -> int:
 
 # ─────────────────────────────────────────────────────────────────────────────
 # A — Accuracy  (1–5)
-# Heuristic checks on the title for quality / reliability signals.
+# Heuristic checks on title and (optionally) rss_excerpt for quality signals.
+# SIFT "Trace claims": sensational/weasel language in the body is a stronger
+# signal than the title alone.
 # ─────────────────────────────────────────────────────────────────────────────
 
 _SENSATIONAL_RE = re.compile(
@@ -167,26 +191,38 @@ _KNOWN_ACRONYMS  = {
     "FEMA","IAEA","FIFA","OECD","UNHCR","WTO","IAEA","SWIFT","ISIL",
     "ISIS","ASEAN","BRICS","UK","US","EU","UN","AU","AFP","BBC","NPR",
 }
-# Positive accuracy signal — verifiable specific
+# Positive accuracy signal — verifiable specific number or quantity
 # Require 2+ digit numbers OR a unit suffix — prevents "7 things" listicle
 # titles from getting a free accuracy bonus
 _SPECIFIC_RE = re.compile(r"\b(\d{2,}[\d,]*|\d+(%|bn|mn|km|kg|°|people|soldiers|votes))\b")
 
-def score_accuracy(title: str) -> int:
+def score_accuracy(title: str, excerpt: str = "") -> int:
     score = 4   # professional outlets get a reasonable baseline
 
+    # Title-level checks
     if title.count("!") >= 2:                    score -= 2
     elif "!" in title:                            score -= 1
-    if _QUESTION_RE.search(title):                score -= 1   # speculative
-    if _SENSATIONAL_RE.search(title):             score -= 2
-    if _SUPERLATIVE_RE.search(title):             score -= 1
-    if _WEASEL_RE.search(title):                  score -= 1
+    if _QUESTION_RE.search(title):               score -= 1   # speculative
+    if _SENSATIONAL_RE.search(title):            score -= 2
+    if _SUPERLATIVE_RE.search(title):            score -= 1
+    if _WEASEL_RE.search(title):                 score -= 1
 
     real_caps = [w for w in _CAPS_WORD_RE.findall(title) if w not in _KNOWN_ACRONYMS]
-    if len(real_caps) >= 2:                       score -= 1
+    if len(real_caps) >= 2:                      score -= 1
 
-    # Reward verifiable specifics
-    if _SPECIFIC_RE.search(title):                score += 1
+    # Reward verifiable specifics in title
+    if _SPECIFIC_RE.search(title):               score += 1
+
+    # Body-level checks via RSS excerpt (SIFT: Trace claims)
+    # Only penalise once per category to avoid double-counting with title hits
+    if excerpt:
+        body = excerpt[:600]  # first 600 chars — enough for lede paragraph
+        if _SENSATIONAL_RE.search(body) and not _SENSATIONAL_RE.search(title):
+            score -= 1
+        if _WEASEL_RE.search(body) and not _WEASEL_RE.search(title):
+            score -= 1
+        if body.count("!") >= 3:
+            score -= 1
 
     return max(1, min(5, score))
 
@@ -194,7 +230,6 @@ def score_accuracy(title: str) -> int:
 # ─────────────────────────────────────────────────────────────────────────────
 # P — Purpose  (1–5)
 # Inferred from title signals — not just the source.
-# A wire service CAN publish opinion; a public broadcaster CAN sponsor content.
 # ─────────────────────────────────────────────────────────────────────────────
 
 _PURPOSE_NEWS_RE = re.compile(
@@ -215,7 +250,6 @@ _PURPOSE_SOFT_RE = re.compile(
     r"box office|album (release|chart)|concert tour|red carpet)\b",
     re.IGNORECASE,
 )
-
 # Geopolitics signal — these topics are the editorial core of Veris
 _GEOPOLITICS_RE = re.compile(
     r"\b(war|invasion|coup|sanctions|nato|un security|ceasefire|"
@@ -242,6 +276,53 @@ def score_purpose(source_name: str, title: str) -> int:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# O — Objectivity  (1–5)  NEW in v3
+# SIFT "Stop and reflect": does the institution behind this content exercise
+# quality control, and does its affiliation bias the information?
+#
+# Key signals:
+#   • Source institutional backing (wire/public-broadcaster → high objectivity)
+#   • Sponsored / advertorial / partner-content URL patterns → hard 1
+#   • Sponsored title markers → hard 1
+#   • Editorial URL path (opinion/blog) softly reduces even good sources
+# ─────────────────────────────────────────────────────────────────────────────
+
+_SPONSORED_URL_RE = re.compile(
+    r"/(sponsored|advertorial|partner.content|brand.content|"
+    r"native.?ad|promoted|paid.content|branded)/",
+    re.IGNORECASE,
+)
+_SPONSORED_TITLE_RE = re.compile(
+    r"\b(sponsored|brought to you by|in partnership with|"
+    r"paid post|advertorial|presented by|partner content)\b",
+    re.IGNORECASE,
+)
+# State-controlled / propaganda outlets — none are in our source registry,
+# but added as defence-in-depth if a title quotes or names them
+_PROPAGANDA_RE = re.compile(
+    r"\b(cgtn|xinhua|rt\s+news|sputnik|global times|people.s daily|tass)\b",
+    re.IGNORECASE,
+)
+
+def score_objectivity(source_name: str, title: str, url: str) -> int:
+    # Hard fails — sponsored or propaganda content is objectively 1
+    if _SPONSORED_URL_RE.search(url):       return 1
+    if _SPONSORED_TITLE_RE.search(title):   return 1
+
+    source = SOURCE_BY_NAME.get(source_name)
+    if not source:
+        return 2  # unknown source — neutral-low, no quality-control evidence
+
+    base = source["objectivity_score"]
+
+    # Editorial URL softly reduces even institutionally strong sources
+    # (an opinion piece from BBC is still less objective than a news dispatch)
+    if _EDITORIAL_URL_RE.search(url):   base = max(1, base - 1)
+
+    return max(1, min(5, base))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Composite scorer
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -250,36 +331,49 @@ def score_article(
     url: str,
     source_name: str,
     published_at: datetime,
+    excerpt: str = "",
 ) -> dict:
     """
     Returns a dict with per-dimension scores, total, and pass/fail.
     {
-        "currency":  int,
-        "relevance": int,
-        "authority": int,
-        "accuracy":  int,
-        "purpose":   int,
-        "total":     int,
-        "passes":    bool,
+        "currency":     int,
+        "relevance":    int,
+        "authority":    int,
+        "accuracy":     int,
+        "purpose":      int,
+        "objectivity":  int,
+        "total":        int,   # max 31 (30 base + quality bonus)
+        "passes":       bool,
     }
+
+    Cross-dimension quality bonus (SIFT "Find other coverage"):
+    When both Relevance ≥ 4 AND Accuracy ≥ 4, the story has passed
+    independent quality checks on two axes — total gets +1.
     """
     c     = score_currency(published_at)
     r     = score_relevance(title, url)
     a_aut = score_authority(source_name, title, url)
-    a_acc = score_accuracy(title)
+    a_acc = score_accuracy(title, excerpt)
     p     = score_purpose(source_name, title)
-    total = c + r + a_aut + a_acc + p
+    o     = score_objectivity(source_name, title, url)
 
-    # Hard fail: R=1 means definitively not a news article (opinion, promo,
-    # audio, nav page, listicle). Source authority must not rescue it.
-    passes = (r > 1) and (total >= MIN_SCORE)
+    # Cross-dimension quality bonus
+    quality_bonus = 1 if (r >= 4 and a_acc >= 4) else 0
+
+    total = c + r + a_aut + a_acc + p + o + quality_bonus
+
+    # Hard fail conditions — source authority/total must not rescue these:
+    #   R=1  → opinion, promo, audio, nav page, listicle, celebrity content
+    #   O=1  → sponsored/advertorial/propaganda URL or title marker
+    passes = (r > 1) and (o > 1) and (total >= MIN_SCORE)
 
     return {
-        "currency":  c,
-        "relevance": r,
-        "authority": a_aut,
-        "accuracy":  a_acc,
-        "purpose":   p,
-        "total":     total,
-        "passes":    passes,
+        "currency":     c,
+        "relevance":    r,
+        "authority":    a_aut,
+        "accuracy":     a_acc,
+        "purpose":      p,
+        "objectivity":  o,
+        "total":        total,
+        "passes":       passes,
     }

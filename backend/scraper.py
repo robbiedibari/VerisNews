@@ -212,16 +212,19 @@ def fetch_feed(source_cfg: dict, feed_url: str) -> list[dict]:
         if not _is_fresh(published_at):
             continue
 
+        rss_excerpt = _extract_excerpt(entry)
+
         craap = score_article(
             title=title,
             url=url,
             source_name=source_name,
             published_at=published_at,
+            excerpt=rss_excerpt,
         )
 
         if not craap["passes"]:
             log.debug(
-                "  REJECT (score %d/25) — %s",
+                "  REJECT (score %d/30) — %s",
                 craap["total"], title[:60]
             )
             rejected += 1
@@ -234,11 +237,11 @@ def fetch_feed(source_cfg: dict, feed_url: str) -> list[dict]:
             "url":          url,
             "craap_score":  craap["total"],
             "title_hash":   _title_hash(title),
-            "rss_excerpt":  _extract_excerpt(entry),
+            "rss_excerpt":  rss_excerpt,
         })
 
     log.info(
-        "  → %d accepted, %d rejected by CRAAP filter",
+        "  → %d accepted, %d rejected by CRAAPO filter",
         len(articles), rejected
     )
     return articles

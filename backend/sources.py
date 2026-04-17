@@ -31,8 +31,9 @@ SOURCES = [
         "name": "AP",
         "domain": "apnews.com",
         "tier": 1,
-        "authority_score": 5,   # CRAAP Authority pre-score
-        "purpose_score": 5,     # CRAAP Purpose pre-score
+        "authority_score": 5,     # CRAAPO Authority pre-score
+        "purpose_score": 5,       # CRAAPO Purpose pre-score
+        "objectivity_score": 5,   # CRAAPO Objectivity: wire service, no editorial stance
         "feeds": [
             "https://news.google.com/rss/search?q=site:apnews.com&hl=en-US&gl=US&ceid=US:en",
             # rsshub.app removed — public instance returns 403
@@ -48,6 +49,7 @@ SOURCES = [
         "tier": 1,
         "authority_score": 5,
         "purpose_score": 5,
+        "objectivity_score": 5,   # wire service, statutory independence (Loi n°57-32)
         "feeds": [
             "https://news.google.com/rss/search?q=site:afp.com&hl=en-US&gl=US&ceid=US:en",
         ],
@@ -66,6 +68,7 @@ SOURCES = [
         "tier": 2,
         "authority_score": 4,
         "purpose_score": 4,
+        "objectivity_score": 4,   # non-profit, editorial firewall from funders
         "feeds": [
             "https://feeds.npr.org/1001/rss.xml",   # News
             "https://feeds.npr.org/1003/rss.xml",   # U.S.
@@ -82,6 +85,7 @@ SOURCES = [
         "tier": 2,
         "authority_score": 5,
         "purpose_score": 4,
+        "objectivity_score": 5,   # Royal Charter + Ofcom regulation — strongest accountability
         "feeds": [
             # feeds.bbci.co.uk no longer resolves; using Google News mirror
             "https://news.google.com/rss/search?q=site:bbc.com/news&hl=en-US&gl=US&ceid=US:en",
@@ -97,6 +101,7 @@ SOURCES = [
         "tier": 2,
         "authority_score": 4,
         "purpose_score": 4,
+        "objectivity_score": 4,   # DW Act, editorial independence guaranteed by law
         "feeds": [
             "https://rss.dw.com/rdf/rss-en-all",
         ],
@@ -111,6 +116,7 @@ SOURCES = [
         "tier": 2,
         "authority_score": 4,
         "purpose_score": 4,
+        "objectivity_score": 4,   # Broadcast Act, public mandate
         "feeds": [
             # nhk.or.jp DNS not resolving externally; using Google News mirror
             "https://news.google.com/rss/search?q=site:nhk.or.jp/nhkworld&hl=en-US&gl=US&ceid=US:en",
@@ -126,6 +132,7 @@ SOURCES = [
         "tier": 2,
         "authority_score": 4,
         "purpose_score": 4,
+        "objectivity_score": 4,   # ABC Act 1983, statutory independence
         "feeds": [
             # abc.net.au DNS not resolving externally; using Google News mirror
             "https://news.google.com/rss/search?q=site:abc.net.au/news&hl=en-US&gl=US&ceid=US:en",
@@ -141,6 +148,7 @@ SOURCES = [
         "tier": 2,
         "authority_score": 4,
         "purpose_score": 4,
+        "objectivity_score": 4,   # Broadcasting Act, Crown corporation independence
         "feeds": [
             # cbc.ca DNS not resolving externally; using Google News mirror
             "https://news.google.com/rss/search?q=site:cbc.ca/news&hl=en-US&gl=US&ceid=US:en",
@@ -156,6 +164,7 @@ SOURCES = [
         "tier": 2,
         "authority_score": 4,
         "purpose_score": 4,
+        "objectivity_score": 4,   # France Médias Monde governance
         "feeds": [
             "https://www.rfi.fr/en/rss",
         ],
@@ -170,6 +179,7 @@ SOURCES = [
         "tier": 2,
         "authority_score": 4,
         "purpose_score": 4,
+        "objectivity_score": 4,   # non-profit, strict funder-editorial firewall
         "feeds": [
             "https://www.pbs.org/newshour/feeds/rss/headlines",
         ],
