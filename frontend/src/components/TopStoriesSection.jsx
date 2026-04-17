@@ -1,6 +1,30 @@
 import React from "react";
 import ImportanceBadge from "./ImportanceBadge";
 
+function BriefingHeader({ count, now }) {
+  const date = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month:   "long",
+    day:     "numeric",
+  }).format(new Date(now));
+
+  return (
+    <div className="mb-5 pb-4 border-b border-theme">
+      <p className="text-[11px] font-bold uppercase tracking-widest text-muted mb-1.5">
+        {date}
+      </p>
+      <h1 className="font-serif text-[22px] font-bold text-primary leading-tight">
+        Today's briefing
+      </h1>
+      {count > 0 && (
+        <p className="mt-1.5 text-[12px] text-secondary">
+          {count} {count === 1 ? "story" : "stories"} · ranked by credibility and global impact
+        </p>
+      )}
+    </div>
+  );
+}
+
 const ArrowIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -94,6 +118,9 @@ function TopStoryCard({ article, rank, now, isRead, onRead }) {
 export default function TopStoriesSection({ stories, loading, now, isRead, onRead }) {
   return (
     <div className="flex flex-col gap-2.5">
+      {/* Briefing header — always shown, count updates once stories load */}
+      <BriefingHeader count={loading ? 0 : stories.length} now={now} />
+
       {loading &&
         Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="h-24 rounded-lg bg-skel-base animate-pulse" />
@@ -101,7 +128,7 @@ export default function TopStoriesSection({ stories, loading, now, isRead, onRea
       }
 
       {!loading && stories.length === 0 && (
-        <div className="text-center py-16">
+        <div className="text-center py-12">
           <p className="text-sm font-semibold text-secondary">No ranked stories yet</p>
           <p className="text-xs text-muted mt-1">Stories are ranked automatically every 5 hours.</p>
         </div>
