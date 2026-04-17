@@ -161,7 +161,7 @@ export default function AboutPage() {
         <div className="flex flex-col gap-1.5">
           {[
             "Opinion, commentary, and editorial columns",
-            "Listicles ("10 reasons why…")",
+            'Listicles ("10 reasons why…")',
             "Sponsored, advertorial, and partner content",
             "Celebrity and entertainment news",
             "Podcast, audio, and video-only pages",
