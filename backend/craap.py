@@ -76,11 +76,20 @@ _NAV_PAGE_RE  = re.compile(
     re.IGNORECASE,
 )
 # SIFT: celebrity / entertainment = not geopolitical news — hard R=1 fail
-# Mirrors _PURPOSE_SOFT_RE but here it gates relevance, not just purpose
+# Two layers:
+#   1. Known celebrity names — catches famous individuals by name
+#   2. Profession identifiers — catches ANY "Singer X arrested", "Rapper Y charged"
+#      regardless of fame level. These professions have no legitimate use in geopolitics.
+#      Note: "actor" is intentionally excluded — "non-state actor", "bad actor",
+#      "state actor" are real geopolitical terms.
 _CELEB_RELEVANCE_RE = re.compile(
     r"\b(taylor swift|beyonc[eé]|kim kardashian|kanye( west)?|drake|rihanna|"
     r"selena gomez|ariana grande|harry styles|billie eilish|britney spears|"
     r"lady gaga|justin bieber|miley cyrus|dua lipa|the weeknd|post malone|"
+    # Profession-based — catches unknown/emerging celebrities by role title
+    r"singer|rapper|r&b (singer|artist|star)|pop (singer|artist)|"
+    r"actress|influencer|youtuber|tiktok(er| star)?|"
+    # Event/format signals
     r"grammy (award|winner|nominee)|golden globe|emmy award|"
     r"box office (record|gross)|concert tour|album (chart|release|drop)|"
     r"red carpet|celebrity couple|celebrity split)\b",

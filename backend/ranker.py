@@ -165,6 +165,11 @@ _CELEBRITY_RE = re.compile(
     r"harry styles|ariana grande|billie eilish|selena gomez|justin bieber|"
     r"lady gaga|katy perry|britney spears|miley cyrus|dua lipa|"
     r"travis kelce|nicki minaj|cardi b|bad bunny|"
+    # Profession identifiers — catches unknown/emerging celebrities by role title
+    # regardless of fame level. "actor" excluded: "non-state actor" / "bad actor"
+    # are legitimate geopolitics terms.
+    r"singer|rapper|r&b (singer|artist|star)|pop (singer|artist)|"
+    r"actress|influencer|youtuber|tiktok(er| star)?|"
     r"grammy|oscar (award|ceremony|winner)|emmy award|bafta|"
     r"box office|album (release|chart|debut)|concert tour|red carpet|"
     r"celebrity (news|drama|feud)|pop star|reality (tv|show)|"
