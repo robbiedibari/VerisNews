@@ -1,42 +1,48 @@
 """
-Veris — Article Summariser
+Veris — Article Summariser  (v2 — Gemini Flash)
 
-Generates a 3–4 sentence plain-English summary for each article so
-users understand the story without leaving the app.
+Generates a 3–4 sentence plain-English summary for each article covering:
+  • What happened (the concrete event)
+  • Who is involved (countries, leaders, organisations)
+  • Why it matters geopolitically
+  • One line of context to make sense of it
 
-Primary:  Ollama (llama3.2:1b) — context-aware summary from title + RSS excerpt
-Fallback: RSS excerpt stored at scrape time — used automatically in
-          GitHub Actions where Ollama is unavailable.
+Primary:  Gemini 1.5 Flash — fast, free tier more than covers our volume
+          (1M tokens/day free; we use ~17% of that at current ingestion rate)
+Fallback: RSS excerpt stored at scrape time — used automatically when
+          GEMINI_API_KEY is not set or the API call fails.
 
 Two passes per pipeline run:
   Pass 1 — articles with summary IS NULL (never summarised)
   Pass 2 — articles summarised_by = 'rss' in last 48 h
-            upgraded to AI summary when Ollama becomes available
+            upgraded to proper Gemini summary on next run
 """
 
 import logging
+import os
 import time
 
-import requests
 from db import get_connection
 
 log = logging.getLogger(__name__)
 
-OLLAMA_BASE  = "http://localhost:11434"
-OLLAMA_MODEL = "llama3.2:1b"
+_MODEL_NAME = "gemini-1.5-flash"
 
 _PROMPT = """\
 You are a news summariser for Veris, a geopolitics-focused news aggregator.
 
-Write a factual summary of this article in 3–4 sentences.
+Write a factual summary of this news article in 3-4 sentences.
 
 Rules:
-- Cover the main event, who is involved, and why it matters geopolitically
-- Include specific names, numbers, countries, and dates when available
+- Sentence 1: state the main event clearly (what happened, where, when)
+- Sentence 2: who is involved — specific names, countries, organisations
+- Sentence 3: why this matters geopolitically — consequences, implications
+- Sentence 4 (optional): one sentence of context that helps understand the story
+- Use specific numbers, names, and dates when available in the excerpt
 - No opinion, no editorialising, no value judgements
 - Do not start with "The article...", "According to...", or "This article..."
 - Write in plain, direct English — as if briefing a busy analyst
-- If the excerpt is too thin to summarise, write what you can from the headline
+- If the excerpt is too thin, write what you can from the headline alone
 
 Headline: {title}
 Source: {source}
@@ -46,41 +52,43 @@ Write ONLY the summary, no preamble, no labels:"""
 
 
 # ---------------------------------------------------------------------------
-# Ollama client
+# Gemini client
 # ---------------------------------------------------------------------------
 
-def _ollama_available() -> bool:
+def _get_gemini_model():
+    """Initialise Gemini client. Returns model or None if key not set."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return None
     try:
-        r = requests.get(f"{OLLAMA_BASE}/api/tags", timeout=3)
-        return r.status_code == 200
-    except Exception:
-        return False
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        return genai.GenerativeModel(
+            model_name=_MODEL_NAME,
+            generation_config={
+                "temperature":     0.2,   # factual, low creativity
+                "max_output_tokens": 300, # ~3-4 sentences
+            },
+        )
+    except Exception as e:
+        log.warning("Gemini init failed: %s", e)
+        return None
 
 
-def _ollama_summarise(title: str, source: str, excerpt: str) -> str | None:
+def _gemini_summarise(model, title: str, source: str, excerpt: str) -> str | None:
     prompt = _PROMPT.format(
         title=title,
         source=source,
         excerpt=excerpt[:2000] if excerpt else "(no excerpt available)",
     )
     try:
-        resp = requests.post(
-            f"{OLLAMA_BASE}/api/generate",
-            json={
-                "model":   OLLAMA_MODEL,
-                "prompt":  prompt,
-                "stream":  False,
-                "options": {"temperature": 0.2, "seed": 42},
-            },
-            timeout=60,
-        )
-        resp.raise_for_status()
-        text = resp.json().get("response", "").strip()
-        # Sanity check — reject obviously bad outputs
-        if len(text) > 40 and not text.lower().startswith("i "):
+        response = model.generate_content(prompt)
+        text = response.text.strip()
+        # Sanity check — reject empty or suspiciously short outputs
+        if len(text) > 60:
             return text
     except Exception as e:
-        log.debug("Ollama summarise error: %s", e)
+        log.debug("Gemini summarise error: %s", e)
     return None
 
 
@@ -90,22 +98,22 @@ def _ollama_summarise(title: str, source: str, excerpt: str) -> str | None:
 
 def summarise_articles(limit: int = 100) -> int:
     """
-    Summarise articles that don't yet have a summary, or upgrade
-    RSS-excerpt fallbacks to proper AI summaries.
+    Summarise articles that don't yet have a proper summary.
 
     Pass 1 — summary IS NULL (never summarised):
-              Use Ollama if available, else store the RSS excerpt directly.
+              Use Gemini if available, else store the RSS excerpt directly.
 
-    Pass 2 — summarised_by = 'rss' in last 48 h (Ollama only):
-              Upgrade rough RSS excerpts to proper AI summaries now that
-              Ollama is running.
+    Pass 2 — summarised_by = 'rss' in last 48 h:
+              Upgrade rough RSS excerpts to proper Gemini summaries.
 
     Returns total number of articles summarised / upgraded.
     """
-    use_ai = _ollama_available()
+    model = _get_gemini_model()
+    use_ai = model is not None
+
     log.info(
-        "Summariser: Ollama %s",
-        "available — generating AI summaries" if use_ai else "offline — RSS excerpt fallback",
+        "Summariser: Gemini %s",
+        "available — generating AI summaries" if use_ai else "unavailable — RSS excerpt fallback",
     )
 
     conn = get_connection()
@@ -123,7 +131,7 @@ def summarise_articles(limit: int = 100) -> int:
             """, (limit,))
             unsummarised = cur.fetchall()
 
-            # Pass 2 — upgrade RSS fallbacks (AI only)
+            # Pass 2 — upgrade RSS fallbacks to AI summaries
             rss_rows = []
             if use_ai:
                 cur.execute("""
@@ -143,7 +151,7 @@ def summarise_articles(limit: int = 100) -> int:
             return 0
 
         log.info(
-            "Summariser: %d articles (%d new, %d RSS upgrades)...",
+            "Summariser: %d articles to process (%d new, %d RSS upgrades)...",
             len(rows), len(unsummarised), len(rss_rows),
         )
 
@@ -155,10 +163,10 @@ def summarise_articles(limit: int = 100) -> int:
                     excerpt = row["rss_excerpt"] or ""
 
                     if use_ai:
-                        summary = _ollama_summarise(row["title"], row["source"], excerpt)
-                        method  = "ai"
+                        summary = _gemini_summarise(model, row["title"], row["source"], excerpt)
+                        method  = "gemini"
                     else:
-                        # Fallback: use the RSS excerpt as-is if it's substantial
+                        # Fallback: use RSS excerpt if it's substantial enough
                         summary = excerpt.strip() if len(excerpt.strip()) > 60 else None
                         method  = "rss"
 
@@ -176,17 +184,15 @@ def summarise_articles(limit: int = 100) -> int:
                         (summary, method, row["id"]),
                     )
                     count += 1
-                    log.debug(
-                        "  [%s] %s",
-                        method.upper(),
-                        row["title"][:70],
-                    )
+                    log.debug("  [%s] %s", method.upper(), row["title"][:70])
 
+                    # Respect Gemini free tier: 15 req/min → 1 req per 4s is safe
                     if use_ai:
-                        time.sleep(0.1)
+                        time.sleep(4)
 
         log.info("Summariser: %d articles processed.", count)
         return count
+
     finally:
         conn.close()
 
