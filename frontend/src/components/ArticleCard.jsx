@@ -1,5 +1,6 @@
 import React from "react";
 import ImportanceBadge from "./ImportanceBadge";
+import CoverageBar from "./CoverageBar";
 
 const ArrowIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -77,6 +78,9 @@ export default function ArticleCard({ article, isRead, onRead, now }) {
               {article.summary}
             </p>
           )}
+
+          {/* Multi-source coverage */}
+          <CoverageBar coveredBy={article.covered_by} />
 
           {/* Footer */}
           <a

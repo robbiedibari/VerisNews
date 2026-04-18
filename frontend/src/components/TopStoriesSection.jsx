@@ -1,5 +1,6 @@
 import React from "react";
 import ImportanceBadge from "./ImportanceBadge";
+import CoverageBar from "./CoverageBar";
 
 function BriefingHeader({ count, now }) {
   const date = new Intl.DateTimeFormat("en-US", {
@@ -93,6 +94,9 @@ function TopStoryCard({ article, rank, now, isRead, onRead }) {
               {article.summary}
             </p>
           )}
+
+          {/* Multi-source coverage */}
+          <CoverageBar coveredBy={article.covered_by} />
 
           {/* Footer */}
           <a
