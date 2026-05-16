@@ -46,6 +46,7 @@ Thumbs.db
 # ── Owner-only docs ───────────────────────────────────────
 OWNER_GUIDE.md
 TECHNICAL_GUIDE.md
+CODEBASE_MAP.md
 
 # ── Misc ──────────────────────────────────────────────────
 *.log
